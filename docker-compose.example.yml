@@ -1,0 +1,9 @@
+services:
+  pg-backup-module:
+    build: .
+    container_name: pg-backup-module
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./backups:/app/backups

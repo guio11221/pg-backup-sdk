@@ -1,0 +1,7 @@
+src/
+backups/
+.env
+*.log
+coverage/
+.vscode/
+.idea/
