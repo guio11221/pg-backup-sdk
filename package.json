@@ -1,12 +1,18 @@
 {
-  "name": "pg-backup-module",
-  "version": "1.0.0",
+  "name": "pg-backup-sdk",
+  "version": "1.0.3",
   "description": "PostgreSQL backup scheduler with pg_dump, retention policy and per-database folders.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
-    "pg-backup-module": "dist/index.js"
+    "pg-backup-sdk": "dist/index.js"
   },
   "files": [
     "dist",
@@ -28,10 +34,20 @@
     "pg-dump",
     "database",
     "scheduler",
-    "cron"
+    "cron",
+    "typescript",
+    "nodejs"
   ],
   "author": "GUILHERME DE OLIVEIRA",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guio11221/pg-backup-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/guio11221/pg-backup-sdk/issues"
+  },
+  "homepage": "https://github.com/guio11221/pg-backup-sdk#readme",
   "publishConfig": {
     "access": "public"
   },

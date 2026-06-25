@@ -1,7 +1,7 @@
 services:
-  pg-backup-module:
+  pg-backup-sdk:
     build: .
-    container_name: pg-backup-module
+    container_name: pg-backup-sdk
     restart: unless-stopped
     env_file:
       - .env
