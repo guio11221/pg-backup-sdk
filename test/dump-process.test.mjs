@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -61,5 +61,18 @@ test('removes an incomplete dump when the executable is missing', async () => {
       { code: 'ENOENT' }
     );
     await assert.rejects(stat(outputPath), { code: 'ENOENT' });
+  });
+});
+
+test('never overwrites an existing dump on filename collision', async () => {
+  await inTemporaryDirectory(async (directory) => {
+    const outputPath = path.join(directory, 'existing.dump');
+    await writeFile(outputPath, 'original backup');
+
+    await assert.rejects(
+      writeProcessOutput(process.execPath, ['-e', "process.stdout.write('replacement')"], outputPath, 'test'),
+      { code: 'EEXIST' }
+    );
+    assert.equal(await readFile(outputPath, 'utf8'), 'original backup');
   });
 });

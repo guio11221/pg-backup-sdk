@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { pathExists, safeFolderName, timestampForFile } from '../dist/fs-utils.js';
+import { backupFileName, pathExists, safeFolderName, timestampForFile } from '../dist/fs-utils.js';
 
 test('pathExists returns true for existing files and false for missing files', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'pg-backup-sdk-test-'));
@@ -40,4 +40,12 @@ test('timestampForFile produces a valid local timestamp', () => {
   assert.ok(hour >= 0 && hour <= 23);
   assert.ok(minute >= 0 && minute <= 59);
   assert.ok(second >= 0 && second <= 59);
+});
+
+test('backup filenames remain unique for concurrent dumps in the same second', () => {
+  const names = Array.from({ length: 100 }, () => backupFileName('financeiro/prod'));
+  assert.equal(new Set(names).size, names.length);
+  for (const name of names) {
+    assert.match(name, /^financeiro_prod_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_[0-9a-f-]{36}\.dump$/);
+  }
 });
