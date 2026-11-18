@@ -1,11 +1,10 @@
-import { spawn } from 'node:child_process';
-import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config } from './config.js';
 import { listDatabases } from './postgres.js';
 import { Logger } from './logger.js';
-import { pathExists, safeFolderName, timestampForFile } from './fs-utils.js';
+import { safeFolderName, timestampForFile } from './fs-utils.js';
+import { writeProcessOutput } from './dump-process.js';
 
 export type BackupResult = {
   database: string;
@@ -22,8 +21,6 @@ async function dumpDatabase(databaseName: string): Promise<string> {
     databaseFolder,
     `${safeFolderName(databaseName)}_${timestampForFile()}.dump`
   );
-
-  const outputStream = createWriteStream(outputPath);
 
   const args = [
     '--host',
@@ -43,54 +40,13 @@ async function dumpDatabase(databaseName: string): Promise<string> {
 
   Logger.info(`Backup started: ${databaseName}`);
 
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(config.binaries.pgDump, args, {
-      env: {
-        ...process.env,
-        PGPASSWORD: config.pg.password
-      },
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    let stderr = '';
-
-    child.stdout.pipe(outputStream);
-
-    child.stderr.on('data', (data: Buffer) => {
-      const text = data.toString();
-      stderr += text;
-      process.stdout.write(`[pg_dump:${databaseName}] ${text}`);
-    });
-
-    child.on('error', async (error) => {
-      outputStream.close();
-
-      if (await pathExists(outputPath)) {
-        await fs.unlink(outputPath).catch(() => undefined);
-      }
-
-      reject(error);
-    });
-
-    child.on('close', async (code) => {
-      outputStream.close();
-
-      if (code === 0) {
-        resolve();
-        return;
-      }
-
-      if (await pathExists(outputPath)) {
-        await fs.unlink(outputPath).catch(() => undefined);
-      }
-
-      reject(
-        new Error(
-          `pg_dump failed for database ${databaseName}. Exit code: ${code}. Details: ${stderr}`
-        )
-      );
-    });
-  });
+  await writeProcessOutput(
+    config.binaries.pgDump,
+    args,
+    outputPath,
+    config.pg.password,
+    (chunk) => process.stdout.write(`[pg_dump:${databaseName}] ${chunk}`)
+  );
 
   Logger.info(`Backup finished: ${outputPath}`);
 
