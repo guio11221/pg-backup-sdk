@@ -76,3 +76,21 @@ test('never overwrites an existing dump on filename collision', async () => {
     assert.equal(await readFile(outputPath, 'utf8'), 'original backup');
   });
 });
+
+test('creates backup outputs with owner-only permissions on POSIX', async () => {
+  if (process.platform === 'win32') return;
+
+  await inTemporaryDirectory(async (directory) => {
+    const outputPath = path.join(directory, 'private.dump');
+    await writeProcessOutput(
+      process.execPath,
+      ['-e', "process.stdout.write('PGDMP')"],
+      outputPath,
+      'test'
+    );
+
+    const fileStat = await stat(outputPath);
+    assert.equal(fileStat.mode & 0o077, 0, 'group/other must not be able to read the dump');
+    assert.equal(fileStat.mode & 0o600, 0o600);
+  });
+});
