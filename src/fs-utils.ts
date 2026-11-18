@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 
 export async function pathExists(filePath: string): Promise<boolean> {
@@ -24,4 +25,8 @@ export function timestampForFile(): string {
   const ss = String(now.getSeconds()).padStart(2, '0');
 
   return `${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}`;
+}
+
+export function backupFileName(databaseName: string): string {
+  return `${safeFolderName(databaseName)}_${timestampForFile()}_${randomUUID()}.dump`;
 }
