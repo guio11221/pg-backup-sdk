@@ -6,6 +6,7 @@ import { Logger } from './logger.js';
 import { backupFileName, safeFolderName } from './fs-utils.js';
 import { writeProcessOutput } from './dump-process.js';
 import { removeOldBackups } from './retention.js';
+import { verifyCustomDump } from './dump-validation.js';
 
 export type BackupResult = {
   database: string;
@@ -48,6 +49,8 @@ async function dumpDatabase(databaseName: string): Promise<string> {
     config.pg.password,
     (chunk) => process.stdout.write(`[pg_dump:${databaseName}] ${chunk}`)
   );
+
+  await verifyCustomDump(outputPath);
 
   Logger.info(`Backup finished: ${outputPath}`);
 
