@@ -3,7 +3,7 @@ import path from 'node:path';
 import { config } from './config.js';
 import { listDatabases } from './postgres.js';
 import { Logger } from './logger.js';
-import { safeFolderName, timestampForFile } from './fs-utils.js';
+import { backupFileName, safeFolderName } from './fs-utils.js';
 import { writeProcessOutput } from './dump-process.js';
 
 export type BackupResult = {
@@ -19,7 +19,7 @@ async function dumpDatabase(databaseName: string): Promise<string> {
 
   const outputPath = path.join(
     databaseFolder,
-    `${safeFolderName(databaseName)}_${timestampForFile()}.dump`
+    backupFileName(databaseName)
   );
 
   const args = [
