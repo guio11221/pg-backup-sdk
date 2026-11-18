@@ -75,6 +75,7 @@ PG_PORT=5432
 PG_USER=postgres
 PG_PASSWORD=postgres
 PG_ADMIN_DATABASE=postgres
+PG_CONNECT_TIMEOUT_MS=10000
 
 BACKUP_DIR=./backups
 BACKUP_CRON=0 2 * * *
@@ -97,6 +98,7 @@ ONLY_DATABASES=
 | `PG_USER`               | Usuário PostgreSQL                             | obrigatório                    |
 | `PG_PASSWORD`           | Senha do PostgreSQL                            | obrigatório                    |
 | `PG_ADMIN_DATABASE`     | Banco usado para listar os databases           | `postgres`                     |
+| `PG_CONNECT_TIMEOUT_MS` | Tempo máximo de conexão ao PostgreSQL (ms)      | `10000`                        |
 | `BACKUP_DIR`            | Pasta raiz onde os backups serão salvos        | `./backups`                    |
 | `BACKUP_CRON`           | Expressão CRON usada pelo scheduler            | `0 2 * * *`                    |
 | `BACKUP_RETENTION_DAYS` | Quantidade de dias para manter backups antigos | `7`                            |
