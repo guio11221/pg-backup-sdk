@@ -46,6 +46,6 @@ test('backup filenames remain unique for concurrent dumps in the same second', (
   const names = Array.from({ length: 100 }, () => backupFileName('financeiro/prod'));
   assert.equal(new Set(names).size, names.length);
   for (const name of names) {
-    assert.match(name, /^financeiro_prod_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}_[0-9a-f-]{36}\\.dump$/);
+    assert.match(name, /^financeiro_prod_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_[0-9a-f-]{36}\.dump$/);
   }
 });
