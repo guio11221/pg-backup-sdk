@@ -1,6 +1,5 @@
 import { spawn } from 'node:child_process';
-import { createWriteStream } from 'node:fs';
-import { unlink } from 'node:fs/promises';
+import { open, unlink } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 
 export async function writeProcessOutput(
@@ -10,6 +9,9 @@ export async function writeProcessOutput(
   password: string,
   onStderr: (chunk: string) => void = () => undefined
 ): Promise<void> {
+  // Reserve a new file atomically; never truncate an existing backup.
+  const outputFile = await open(outputPath, 'wx');
+
   const child = spawn(binary, args, {
     env: { ...process.env, PGPASSWORD: password },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -28,7 +30,7 @@ export async function writeProcessOutput(
   });
 
   // pipeline resolves only after the writable file stream finishes.
-  const outputComplete = pipeline(child.stdout, createWriteStream(outputPath));
+  const outputComplete = pipeline(child.stdout, outputFile.createWriteStream());
 
   // Observe both promises, even if one fails first, to avoid unfinished writes
   // and to ensure that a failed dump is not left on disk.
