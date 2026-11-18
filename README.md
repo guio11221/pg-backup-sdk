@@ -17,6 +17,7 @@ Ele lista os bancos PostgreSQL, cria uma pasta separada para cada banco e salva 
 * Backup manual via CLI
 * Uso como módulo/SDK em outro projeto
 * Uma pasta separada por banco
+* Novas pastas de backup são criadas com permissões `0700` em sistemas POSIX (pastas existentes não são alteradas)
 * Retenção automática de backups antigos
 * Ignora bancos internos por padrão
 * Permite filtrar bancos específicos
