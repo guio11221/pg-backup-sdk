@@ -5,6 +5,7 @@ import { listDatabases } from './postgres.js';
 import { Logger } from './logger.js';
 import { backupFileName, safeFolderName } from './fs-utils.js';
 import { writeProcessOutput } from './dump-process.js';
+import { removeOldBackups } from './retention.js';
 
 export type BackupResult = {
   database: string;
@@ -53,41 +54,6 @@ async function dumpDatabase(databaseName: string): Promise<string> {
   return outputPath;
 }
 
-async function removeOldBackups(): Promise<void> {
-  const retentionMs = config.backup.retentionDays * 24 * 60 * 60 * 1000;
-  const now = Date.now();
-
-  await fs.mkdir(config.backup.dir, { recursive: true });
-
-  const databaseFolders = await fs.readdir(config.backup.dir, {
-    withFileTypes: true
-  });
-
-  for (const folder of databaseFolders) {
-    if (!folder.isDirectory()) {
-      continue;
-    }
-
-    const folderPath = path.join(config.backup.dir, folder.name);
-    const files = await fs.readdir(folderPath, { withFileTypes: true });
-
-    for (const file of files) {
-      if (!file.isFile() || !file.name.endsWith('.dump')) {
-        continue;
-      }
-
-      const filePath = path.join(folderPath, file.name);
-      const stat = await fs.stat(filePath);
-      const ageMs = now - stat.mtime.getTime();
-
-      if (ageMs > retentionMs) {
-        await fs.unlink(filePath);
-        Logger.info(`Old backup removed: ${filePath}`);
-      }
-    }
-  }
-}
-
 export async function runBackupJob(): Promise<BackupResult[]> {
   Logger.info('Backup job started');
 
@@ -125,7 +91,9 @@ export async function runBackupJob(): Promise<BackupResult[]> {
     }
   }
 
-  await removeOldBackups();
+  await removeOldBackups(config.backup.dir, config.backup.retentionDays, (filePath) => {
+    Logger.info(`Old backup removed: ${filePath}`);
+  });
 
   const failures = results.filter((result) => !result.success);
 
