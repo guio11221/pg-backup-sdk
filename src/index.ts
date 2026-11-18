@@ -27,7 +27,12 @@ async function main(): Promise<void> {
   const shouldRunNow = process.argv.includes('--now');
 
   if (shouldRunNow) {
-    await runBackupJob();
+    const results = await runBackupJob();
+
+    if (results.some((result) => !result.success)) {
+      process.exitCode = 1;
+    }
+
     return;
   }
 
