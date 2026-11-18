@@ -4,8 +4,14 @@ import { runBackupJob } from './backup.js';
 import { Logger } from './logger.js';
 
 let isRunning = false;
+let schedulerStarted = false;
 
 export function startBackupScheduler(): void {
+  if (schedulerStarted) {
+    Logger.warn('Backup scheduler is already started');
+    return;
+  }
+
   if (!cron.validate(config.backup.cron)) {
     throw new Error(`Invalid CRON expression: ${config.backup.cron}`);
   }
@@ -30,4 +36,6 @@ export function startBackupScheduler(): void {
       isRunning = false;
     }
   });
+
+  schedulerStarted = true;
 }
