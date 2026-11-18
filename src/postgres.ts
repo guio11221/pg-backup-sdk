@@ -11,7 +11,8 @@ export async function listDatabases(): Promise<string[]> {
     port: config.pg.port,
     user: config.pg.user,
     password: config.pg.password,
-    database: config.pg.adminDatabase
+    database: config.pg.adminDatabase,
+    connectionTimeoutMillis: config.pg.connectionTimeoutMs
   });
 
   await client.connect();
