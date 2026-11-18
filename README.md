@@ -121,6 +121,8 @@ Isso significa:
 * mantém os backups dos últimos `7` dias;
 * backups mais antigos são removidos automaticamente.
 
+A retenção automática remove apenas arquivos com o padrão de nome de backup criado pelo SDK (incluindo o formato antigo, sem UUID). Arquivos `.dump` colocados manualmente e links simbólicos não são selecionados para exclusão. Evite permitir que processos não confiáveis modifiquem a pasta de backups durante a limpeza.
+
 ---
 
 ## Exemplos de CRON
