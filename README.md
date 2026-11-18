@@ -173,6 +173,8 @@ pg-backup-sdk
 
 O scheduler ficará rodando e executará os backups conforme o valor de `BACKUP_CRON`.
 
+Ao executar `pg-backup-sdk --now`, o processo retorna código de saída `1` quando pelo menos um banco falha no backup, permitindo detectar falhas em cron, systemd e scripts de automação. Quando todos os backups terminam com sucesso, retorna `0`. Em caso de lista vazia de bancos, o comando mantém o comportamento atual de retornar `0`.
+
 ---
 
 # Uso como módulo/SDK
