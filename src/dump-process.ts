@@ -10,7 +10,7 @@ export async function writeProcessOutput(
   onStderr: (chunk: string) => void = () => undefined
 ): Promise<void> {
   // Reserve a new file atomically; never truncate an existing backup.
-  const outputFile = await open(outputPath, 'wx');
+  const outputFile = await open(outputPath, 'wx', 0o600);
 
   const child = spawn(binary, args, {
     env: { ...process.env, PGPASSWORD: password },
