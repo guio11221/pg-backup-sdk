@@ -43,3 +43,16 @@ for (const value of ['0', '-1', '1.5', '36501', 'Infinity']) {
     assert.match(result.stderr, /Invalid BACKUP_RETENTION_DAYS/);
   });
 }
+
+test('accepts a bounded PostgreSQL connection timeout', () => {
+  const result = loadConfig({ PG_CONNECT_TIMEOUT_MS: '2500' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+for (const value of ['0', '-5', '1.5', '300001', 'Infinity']) {
+  test(`rejects invalid PG_CONNECT_TIMEOUT_MS: ${value}`, () => {
+    const result = loadConfig({ PG_CONNECT_TIMEOUT_MS: value });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Invalid PG_CONNECT_TIMEOUT_MS/);
+  });
+}
