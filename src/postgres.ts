@@ -16,9 +16,11 @@ export async function listDatabases(): Promise<string[]> {
     query_timeout: config.pg.queryTimeoutMs
   });
 
-  await client.connect();
+  let connected = false;
 
   try {
+    await client.connect();
+    connected = true;
     const result = await client.query<DatabaseRow>(`
       SELECT datname
       FROM pg_database
@@ -35,6 +37,11 @@ export async function listDatabases(): Promise<string[]> {
       .filter((databaseName) => !ignored.has(databaseName))
       .filter((databaseName) => only.size === 0 || only.has(databaseName));
   } finally {
-    await client.end();
+    if (connected) {
+      await client.end();
+    } else {
+      // Preserve the original connection error if cleanup also fails.
+      await client.end().catch(() => undefined);
+    }
   }
 }
