@@ -56,3 +56,16 @@ for (const value of ['0', '-5', '1.5', '300001', 'Infinity']) {
     assert.match(result.stderr, /Invalid PG_CONNECT_TIMEOUT_MS/);
   });
 }
+
+test('accepts a bounded PostgreSQL metadata query timeout', () => {
+  const result = loadConfig({ PG_QUERY_TIMEOUT_MS: '2500' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+for (const value of ['0', '-1', '1.5', '300001', 'Infinity']) {
+  test(`rejects invalid PG_QUERY_TIMEOUT_MS: ${value}`, () => {
+    const result = loadConfig({ PG_QUERY_TIMEOUT_MS: value });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Invalid PG_QUERY_TIMEOUT_MS/);
+  });
+}
