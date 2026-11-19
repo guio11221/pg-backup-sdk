@@ -57,7 +57,8 @@ export const config = {
     user: requiredEnv('PG_USER'),
     password: requiredEnv('PG_PASSWORD'),
     adminDatabase: optionalEnv('PG_ADMIN_DATABASE', 'postgres'),
-    connectionTimeoutMs: integerEnv('PG_CONNECT_TIMEOUT_MS', 10000, 1, 300000)
+    connectionTimeoutMs: integerEnv('PG_CONNECT_TIMEOUT_MS', 10000, 1, 300000),
+    queryTimeoutMs: integerEnv('PG_QUERY_TIMEOUT_MS', 10000, 1, 300000)
   },
 
   backup: {
