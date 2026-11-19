@@ -1,0 +1,46 @@
+name: Relatar bug
+description: Erro reproduzível na criação, validação, agendamento ou retenção de backups
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: "Não inclua senhas, arquivos .env ou dumps reais nesta issue."
+  - type: textarea
+    id: summary
+    attributes:
+      label: Descrição do problema
+      description: O que aconteceu e qual comportamento você esperava?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Use configurações e dados fictícios.
+      placeholder: "1. Configure variáveis de ambiente de teste\n2. Execute npm run backup\n3. Observe..."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs sanitizados
+      description: Remova senhas, hosts privados e qualquer dado de produção.
+      render: text
+    validations:
+      required: false
+  - type: input
+    id: node
+    attributes:
+      label: Versão do Node.js
+      placeholder: "22.x"
+    validations:
+      required: true
+  - type: input
+    id: postgresql
+    attributes:
+      label: Versão do PostgreSQL/pg_dump (quando aplicável)
+      placeholder: "PostgreSQL 16"
+    validations:
+      required: false
