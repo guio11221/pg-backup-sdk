@@ -53,3 +53,50 @@ test('closes PostgreSQL client after successful database listing', async () => {
     pg.Client.prototype.end = oldEnd;
   }
 });
+
+test('preserves the query failure when client shutdown also fails', async () => {
+  const originalConnect = pg.Client.prototype.connect;
+  const originalQuery = pg.Client.prototype.query;
+  const originalEnd = pg.Client.prototype.end;
+  let shutdowns = 0;
+
+  try {
+    pg.Client.prototype.connect = async function () {};
+    pg.Client.prototype.query = async function () {
+      throw new Error('database discovery query failed');
+    };
+    pg.Client.prototype.end = async function () {
+      shutdowns += 1;
+      throw new Error('client shutdown also failed');
+    };
+
+    await assert.rejects(listDatabases(), /database discovery query failed/);
+    assert.equal(shutdowns, 1);
+  } finally {
+    pg.Client.prototype.connect = originalConnect;
+    pg.Client.prototype.query = originalQuery;
+    pg.Client.prototype.end = originalEnd;
+  }
+});
+
+test('reports shutdown errors when the discovery query itself succeeds', async () => {
+  const originalConnect = pg.Client.prototype.connect;
+  const originalQuery = pg.Client.prototype.query;
+  const originalEnd = pg.Client.prototype.end;
+
+  try {
+    pg.Client.prototype.connect = async function () {};
+    pg.Client.prototype.query = async function () {
+      return { rows: [{ datname: 'customers' }] };
+    };
+    pg.Client.prototype.end = async function () {
+      throw new Error('client shutdown failed');
+    };
+
+    await assert.rejects(listDatabases(), /client shutdown failed/);
+  } finally {
+    pg.Client.prototype.connect = originalConnect;
+    pg.Client.prototype.query = originalQuery;
+    pg.Client.prototype.end = originalEnd;
+  }
+});
