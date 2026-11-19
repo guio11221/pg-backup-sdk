@@ -94,3 +94,14 @@ test('creates backup outputs with owner-only permissions on POSIX', async () => 
     assert.equal(fileStat.mode & 0o600, 0o600);
   });
 });
+
+test('removes reserved output if spawn rejects arguments synchronously', async () => {
+  await inTemporaryDirectory(async (directory) => {
+    const outputPath = path.join(directory, 'invalid-executable.dump');
+    await assert.rejects(
+      writeProcessOutput('', [], outputPath, 'test'),
+      { code: 'ERR_INVALID_ARG_VALUE' }
+    );
+    await assert.rejects(stat(outputPath), { code: 'ENOENT' });
+  });
+});
