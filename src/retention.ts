@@ -10,6 +10,28 @@ export function isManagedBackupFile(folderName: string, fileName: string): boole
   return pattern.test(fileName);
 }
 
+/**
+ * Treat files disappearing between readdir and stat as normal during
+ * overlapping cleanup jobs. Other filesystem errors still propagate.
+ */
+async function statIfPresent(filePath: string) {
+  try {
+    return await fs.lstat(filePath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  }
+}
+
+async function entriesIfPresent(directory: string) {
+  try {
+    return await fs.readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
 export async function removeOldBackups(
   backupDir: string,
   retentionDays: number,
@@ -25,18 +47,24 @@ export async function removeOldBackups(
 
     const folderPath = path.join(backupDir, folder.name);
     // Recheck directory type instead of following a preexisting directory link.
-    const folderStat = await fs.lstat(folderPath);
-    if (!folderStat.isDirectory() || folderStat.isSymbolicLink()) continue;
+    const folderStat = await statIfPresent(folderPath);
+    if (!folderStat || !folderStat.isDirectory() || folderStat.isSymbolicLink()) continue;
 
-    const entries = await fs.readdir(folderPath, { withFileTypes: true });
+    const entries = await entriesIfPresent(folderPath);
     for (const entry of entries) {
       if (!entry.isFile() || !isManagedBackupFile(folder.name, entry.name)) continue;
       const filePath = path.join(folderPath, entry.name);
-      const stat = await fs.lstat(filePath);
-      if (!stat.isFile() || stat.isSymbolicLink()) continue;
+      const stat = await statIfPresent(filePath);
+      if (!stat || !stat.isFile() || stat.isSymbolicLink()) continue;
       if (now - stat.mtimeMs <= retentionMs) continue;
 
-      await fs.unlink(filePath);
+      try {
+        await fs.unlink(filePath);
+      } catch (error) {
+        // A parallel cleanup may already have removed this backup.
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw error;
+      }
       onRemoved(filePath);
     }
   }

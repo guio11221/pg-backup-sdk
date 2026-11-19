@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import { mkdtemp, mkdir, readFile, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -56,6 +57,52 @@ test('removes only expired managed backups and preserves manual files and symlin
     assert.equal(await readFile(linkPath, 'utf8'), 'outside');
     assert.equal(await readFile(outsideDump, 'utf8'), 'outside');
   } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('continues cleanup when another worker removes backups during stat or unlink', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'pg-retention-race-'));
+  const dir = path.join(root, 'financeiro');
+  const missingAtStat = path.join(dir, 'financeiro_2025-01-01_00-00-00.dump');
+  const missingAtUnlink = path.join(dir, 'financeiro_2025-01-02_00-00-00.dump');
+  const removable = path.join(dir, 'financeiro_2025-01-03_00-00-00.dump');
+
+  const originalLstat = fs.lstat;
+  const originalUnlink = fs.unlink;
+
+  try {
+    await mkdir(dir, { recursive: true });
+    for (const file of [missingAtStat, missingAtUnlink, removable]) {
+      await writeFile(file, 'expired');
+      const old = new Date('2025-01-01T00:00:00.000Z');
+      await utimes(file, old, old);
+    }
+
+    fs.lstat = async function (file, ...args) {
+      if (file === missingAtStat) {
+        await originalUnlink(missingAtStat);
+        return originalLstat(file, ...args);
+      }
+      return originalLstat(file, ...args);
+    };
+
+    fs.unlink = async function (file, ...args) {
+      if (file === missingAtUnlink) {
+        await originalUnlink(missingAtUnlink);
+        return originalUnlink(file, ...args);
+      }
+      return originalUnlink(file, ...args);
+    };
+
+    const removed = [];
+    const now = new Date('2026-11-19T00:00:00.000Z').getTime();
+    await removeOldBackups(root, 7, (file) => removed.push(file), now);
+    assert.deepEqual(removed, [removable]);
+    await assert.rejects(readFile(removable), { code: 'ENOENT' });
+  } finally {
+    fs.lstat = originalLstat;
+    fs.unlink = originalUnlink;
     await rm(root, { recursive: true, force: true });
   }
 });
