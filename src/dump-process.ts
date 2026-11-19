@@ -12,19 +12,20 @@ export async function writeProcessOutput(
   // Reserve a new file atomically; never truncate an existing backup.
   const outputFile = await open(outputPath, 'wx', 0o600);
 
-  let child: ReturnType<typeof spawn>;
-  try {
-    child = spawn(binary, args, {
-      env: { ...process.env, PGPASSWORD: password },
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-  } catch (error) {
-    // A synchronous spawn validation error happens before stream/pipeline setup.
-    // Close the reserved file handle before removing the incomplete backup.
-    await outputFile.close();
-    await unlink(outputPath).catch(() => undefined);
-    throw error;
-  }
+  // Preserve the pipe-specific child process type when catching spawn errors.
+  const child = await (async () => {
+    try {
+      return spawn(binary, args, {
+        env: { ...process.env, PGPASSWORD: password },
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+    } catch (error) {
+      // A synchronous validation error occurs before pipeline setup.
+      await outputFile.close();
+      await unlink(outputPath).catch(() => undefined);
+      throw error;
+    }
+  })();
 
   let stderr = '';
   child.stderr.on('data', (data: Buffer) => {
