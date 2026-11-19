@@ -16,11 +16,10 @@ export async function listDatabases(): Promise<string[]> {
     query_timeout: config.pg.queryTimeoutMs
   });
 
-  let connected = false;
+  let operationFailed = false;
 
   try {
     await client.connect();
-    connected = true;
     const result = await client.query<DatabaseRow>(`
       SELECT datname
       FROM pg_database
@@ -36,12 +35,15 @@ export async function listDatabases(): Promise<string[]> {
       .map((row) => row.datname)
       .filter((databaseName) => !ignored.has(databaseName))
       .filter((databaseName) => only.size === 0 || only.has(databaseName));
+  } catch (error) {
+    operationFailed = true;
+    throw error;
   } finally {
-    if (connected) {
+    try {
       await client.end();
-    } else {
-      // Preserve the original connection error if cleanup also fails.
-      await client.end().catch(() => undefined);
+    } catch (error) {
+      // The original connect/query error is more actionable than a cleanup failure.
+      if (!operationFailed) throw error;
     }
   }
 }
