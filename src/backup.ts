@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config } from './config.js';
 import { listDatabases } from './postgres.js';
@@ -7,6 +6,7 @@ import { backupFileName, safeFolderName } from './fs-utils.js';
 import { writeProcessOutput } from './dump-process.js';
 import { removeOldBackups } from './retention.js';
 import { verifyCustomDump } from './dump-validation.js';
+import { ensureBackupDirectory } from './backup-directory.js';
 
 export type BackupResult = {
   database: string;
@@ -17,7 +17,7 @@ export type BackupResult = {
 
 async function dumpDatabase(databaseName: string): Promise<string> {
   const databaseFolder = path.join(config.backup.dir, safeFolderName(databaseName));
-  await fs.mkdir(databaseFolder, { recursive: true });
+  await ensureBackupDirectory(databaseFolder);
 
   const outputPath = path.join(
     databaseFolder,
@@ -60,7 +60,7 @@ async function dumpDatabase(databaseName: string): Promise<string> {
 export async function runBackupJob(): Promise<BackupResult[]> {
   Logger.info('Backup job started');
 
-  await fs.mkdir(config.backup.dir, { recursive: true });
+  await ensureBackupDirectory(config.backup.dir);
 
   const databases = await listDatabases();
 
