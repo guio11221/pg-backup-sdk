@@ -3,9 +3,8 @@ import { config } from './config.js';
 import { listDatabases } from './postgres.js';
 import { Logger } from './logger.js';
 import { backupFileName, safeFolderName } from './fs-utils.js';
-import { writeProcessOutput } from './dump-process.js';
+import { writeValidatedBackup } from './backup-publication.js';
 import { removeOldBackups } from './retention.js';
-import { verifyCustomDump } from './dump-validation.js';
 import { ensureBackupDirectory } from './backup-directory.js';
 
 export type BackupResult = {
@@ -42,15 +41,13 @@ async function dumpDatabase(databaseName: string): Promise<string> {
 
   Logger.info(`Backup started: ${databaseName}`);
 
-  await writeProcessOutput(
+  await writeValidatedBackup(
     config.binaries.pgDump,
     args,
     outputPath,
     config.pg.password,
     (chunk) => process.stdout.write(`[pg_dump:${databaseName}] ${chunk}`)
   );
-
-  await verifyCustomDump(outputPath);
 
   Logger.info(`Backup finished: ${outputPath}`);
 
