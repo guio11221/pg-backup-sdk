@@ -66,6 +66,9 @@ export async function runBackupJob(): Promise<BackupResult[]> {
 
   if (databases.length === 0) {
     Logger.warn('No database found for backup');
+    await removeOldBackups(config.backup.dir, config.backup.retentionDays, (filePath) => {
+      Logger.info(`Old backup removed: ${filePath}`);
+    });
     return [];
   }
 
